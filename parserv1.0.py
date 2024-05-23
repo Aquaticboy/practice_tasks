@@ -37,8 +37,8 @@ def process_url(url):
         book_name = None
 
     if book_id and book_name:
-        print(f"Book ID: {book_id}")
-        print(f"Book Name: {book_name}")
+        print(f"Program ID: {book_id}")
+        print(f"Program Name: {book_name}")
     else:
         print("Book ID or name is missing, skipping...")
 
@@ -73,9 +73,9 @@ try:
             process_url(book_url)
 
             count += 1
-            if count >= 20:
+            if count >= 100:
                 break
-        if count >= 20:
+        if count >= 100:
             break
 finally:
     driver.quit()
