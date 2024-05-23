@@ -23,28 +23,24 @@ driver = webdriver.Chrome(service=service, options=options)
 
 
 def process_url(url):
+    driver.get(url)
+    time.sleep(1)
+
+    parsed_url = urlparse(url)
+    parsed_qs = parse_qs(parsed_url.query)
+    book_id = parsed_qs.get('id', [None])[0]
+
     try:
-        driver.get(url)
-        time.sleep(1)
+        book_name_element = driver.find_element(By.CSS_SELECTOR, '[itemprop="name"]')
+        book_name = book_name_element.text.strip()
+    except NoSuchElementException:
+        book_name = None
 
-        parsed_url = urlparse(url)
-        parsed_qs = parse_qs(parsed_url.query)
-        book_id = parsed_qs.get('id', [None])[0]
-
-        try:
-            book_name_element = driver.find_element(By.CSS_SELECTOR, '[itemprop="name"]')
-            book_name = book_name_element.text.strip()
-        except NoSuchElementException:
-            book_name = None
-
-        if book_id and book_name:
-            print(f"Book ID: {book_id}")
-            print(f"Book Name: {book_name}")
-        else:
-            print("Book ID or name is missing, skipping...")
-
-    except WebDriverException as e:
-        print(f"WebDriverException occurred: {e}")
+    if book_id and book_name:
+        print(f"Book ID: {book_id}")
+        print(f"Book Name: {book_name}")
+    else:
+        print("Book ID or name is missing, skipping...")
 
 
 sitemap_index_url = 'https://play.google.com/sitemaps/sitemaps-index-0.xml'
@@ -73,7 +69,7 @@ try:
         for url_element in extracted_root.findall('ns:url/ns:loc', namespace):
             book_url = url_element.text
             print(f"------------------------------------")
-            print(f"Processing book URL: {book_url}")
+            print(f"Processing Google Play's program/book/audiobook/film URL: {book_url}")
             process_url(book_url)
 
             count += 1
