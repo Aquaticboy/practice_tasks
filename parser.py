@@ -8,9 +8,11 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from urllib.parse import urlparse, parse_qs
 import time
-from selenium.common.exceptions import NoSuchElementException, WebDriverException
+from selenium.common.exceptions import NoSuchElementException
 import tempfile
+import csv
 
+# ChromeDriver path
 PATH = r"C:\Program Files (x86)\chromedriver.exe"
 service = Service(PATH)
 
@@ -21,6 +23,13 @@ options.add_argument('--disable-dev-shm-usage')
 
 driver = webdriver.Chrome(service=service, options=options)
 
+# CSV file setup
+filename = "google_play_data.csv"
+
+# Write header to CSV
+with open(filename, mode='w', newline='') as file:
+    writer = csv.writer(file, delimiter=';', quoting=csv.QUOTE_MINIMAL)
+    writer.writerow(["Program ID", "Program Name"])
 
 def process_url(url):
     driver.get(url)
@@ -28,20 +37,24 @@ def process_url(url):
 
     parsed_url = urlparse(url)
     parsed_qs = parse_qs(parsed_url.query)
-    book_id = parsed_qs.get('id', [None])[0]
+    program_id = parsed_qs.get('id', [None])[0]
 
     try:
-        book_name_element = driver.find_element(By.CSS_SELECTOR, '[itemprop="name"]')
-        book_name = book_name_element.text.strip()
+        program_name_element = driver.find_element(By.CSS_SELECTOR, '[itemprop="name"]')
+        program_name = program_name_element.text.strip()
     except NoSuchElementException:
-        book_name = None
+        program_name = None
 
-    if book_id and book_name:
-        print(f"Program ID: {book_id}")
-        print(f"Program Name: {book_name}")
+    if program_id and program_name:
+        print(f"Program ID: {program_id}")
+        print(f"Program Name: {program_name}")
+
+        # Write to CSV
+        with open(filename, mode='a', newline='') as file:
+            writer = csv.writer(file, delimiter=';', quoting=csv.QUOTE_MINIMAL)
+            writer.writerow([program_id, program_name])
     else:
-        print("Book ID or name is missing, skipping...")
-
+        print("Program ID or name is missing, skipping...")
 
 sitemap_index_url = 'https://play.google.com/sitemaps/sitemaps-index-0.xml'
 response = requests.get(sitemap_index_url)
@@ -67,15 +80,15 @@ try:
         extracted_root = extracted_tree.getroot()
 
         for url_element in extracted_root.findall('ns:url/ns:loc', namespace):
-            book_url = url_element.text
+            program_url = url_element.text
             print(f"------------------------------------")
-            print(f"Processing Google Play's program/book/audiobook/film URL: {book_url}")
-            process_url(book_url)
+            print(f"Processing Google Play's program/book/audiobook/film URL: {program_url}")
+            process_url(program_url)
 
             count += 1
-            if count >= 100:
+            if count >= 3:
                 break
-        if count >= 100:
+        if count >= 3:
             break
 finally:
     driver.quit()
