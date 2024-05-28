@@ -12,7 +12,6 @@ from selenium.common.exceptions import NoSuchElementException
 import tempfile
 import csv
 
-# ChromeDriver path
 PATH = r"C:\Program Files (x86)\chromedriver.exe"
 service = Service(PATH)
 
@@ -23,13 +22,12 @@ options.add_argument('--disable-dev-shm-usage')
 
 driver = webdriver.Chrome(service=service, options=options)
 
-# CSV file setup
 filename = "google_play_data.csv"
 
-# Write header to CSV
 with open(filename, mode='w', newline='') as file:
     writer = csv.writer(file, delimiter=';', quoting=csv.QUOTE_MINIMAL)
-    writer.writerow(["Program ID", "Program Name"])
+    writer.writerow(["Program ID", "Program Name", "Program Vendor"])
+
 
 def process_url(url):
     driver.get(url)
@@ -42,19 +40,27 @@ def process_url(url):
     try:
         program_name_element = driver.find_element(By.CSS_SELECTOR, '[itemprop="name"]')
         program_name = program_name_element.text.strip()
+
+        program_vendor_elements = driver.find_elements(By.CSS_SELECTOR, '[class="zjgV1c"]')
+        if len(program_vendor_elements) >= 2:
+            program_vendor = program_vendor_elements[1].text.strip()
+        else:
+            program_vendor = None
     except NoSuchElementException:
         program_name = None
+        program_vendor = None
 
     if program_id and program_name:
         print(f"Program ID: {program_id}")
         print(f"Program Name: {program_name}")
+        print(f"Program Vendor: {program_vendor}")
 
-        # Write to CSV
         with open(filename, mode='a', newline='') as file:
             writer = csv.writer(file, delimiter=';', quoting=csv.QUOTE_MINIMAL)
-            writer.writerow([program_id, program_name])
+            writer.writerow([program_id, program_name, program_vendor])
     else:
         print("Program ID or name is missing, skipping...")
+
 
 sitemap_index_url = 'https://play.google.com/sitemaps/sitemaps-index-0.xml'
 response = requests.get(sitemap_index_url)
